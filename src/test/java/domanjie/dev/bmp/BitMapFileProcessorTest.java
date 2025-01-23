@@ -22,7 +22,8 @@ class BitMapFileProcessorTest {
                 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -128, 0, -1, 0, 0, -1, -1,
                 -1, -1, -1, -1, -1, 0, 0, -1};
 
-        var expectedPixelArray=new byte[][][]{{{0, -128, 0, -1}, {0, 0, -1, -1}}, {{-1, -1, -1, -1}, {-1, 0, 0, -1}}};
+//        var expectedPixelArray=new int[][]{{  {0, -128, 0, -1}, {0, 0, -1, -1}}, {{-1, -1, -1, -1}, {-1, 0, 0, -1}}};
+        var expectedPixelArray=new int[][]{{8388863, 65535}, {-1, -16776961}};
         var expectedBitmapObj=new Bitmap (new DIBHeader(-2,2, (short) 32, Compression.BI_RGB),expectedPixelArray);
 
         //Act

@@ -8,9 +8,9 @@ public class Bitmap {
 
 
     private  final DIBHeader dibHeader;
-    private final byte[][][] pixelArray;
+    private final int[][] pixelArray;
 
-    public byte[][][] getPixelArray() {
+    public int [][] getPixelArray() {
         return pixelArray;
     }
 
@@ -18,7 +18,7 @@ public class Bitmap {
         return dibHeader;
     }
 
-    public Bitmap(DIBHeader dibHeader, byte[][][] pixelArray){
+    public Bitmap(DIBHeader dibHeader, int[][] pixelArray){
         this.dibHeader = dibHeader;
         this.pixelArray = pixelArray;
     }
