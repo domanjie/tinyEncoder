@@ -1,8 +1,6 @@
-package domanjie.dev.Encoder;
+package domanjie.dev.encoder;
 
 import org.junit.jupiter.api.Test;
-
-import java.nio.channels.IllegalChannelGroupException;
 
 import static org.junit.jupiter.api.Assertions.*;
 

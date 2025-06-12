@@ -16,24 +16,35 @@ public  class BitMapFileProcessor {
         var pixelArrayOffset =getBytes(byteArr ,OFFSET_TO_PIXEL_ARRAY_OFFSET ,4).getInt();
         var imageWidth= getBytes(byteArr, OFFSET_TO_IMAGE_WIDTH,4 ).getInt();
         var imageHeight=getBytes(byteArr,OFFSET_TO_IMAGE_HEIGHT,4).getInt();
+        var dibHeaderSize=getBytes(byteArr,14,4).getInt();
+        System.out.println("DIB_HEADER_SIZE:"+dibHeaderSize);
         var bitsPerPixel=getBytes(byteArr, OFFSET_TO_BPP, 2).getShort();
+        System.out.println("BPP:"+ bitsPerPixel);
+        var compression=getBytes(byteArr, 30, 4).getShort();
+        System.out.println("COMPRESSION:"+ compression);
+        System.out.println("IMAGE_HEIGHT:"+imageHeight );
+
+
         var RowSize=Math.ceil(((double)bitsPerPixel * (double)imageWidth)/32)*4;
         var  bytePerPixel=bitsPerPixel/8;
         var absImageHeight=Math.abs(imageHeight);
         var pixelArray=new int [absImageHeight][imageWidth];
 
         //loops through all rows gets each pixel(an array with size ==bpp) and insert it in a 2d array
-        for(int pixelY=absImageHeight-1;pixelY>=0 ;pixelY--){
+        for(int pixelY=0;pixelY<absImageHeight ;pixelY++){
             for(int pixelX=0 ;pixelX<imageWidth ;pixelX++){
                 int pixelStartIndex= (int) (pixelArrayOffset+(pixelY*RowSize)+(pixelX*bytePerPixel));
 
                 var packedPixel=0;
 
                 for(int i =0; i <bytePerPixel; i++){
-                    packedPixel|=(byteArr[pixelStartIndex+i]&0xff)<<(24-8*i);
+                    packedPixel|=(byteArr[pixelStartIndex+i]&0xff)<<(8*i);
                 }
-
-                pixelArray[pixelY][pixelX]=packedPixel;
+                if (imageHeight<0){
+                    pixelArray[ pixelY][pixelX]=packedPixel;
+                }else {
+                    pixelArray[absImageHeight-1- pixelY][pixelX]=packedPixel;
+                }
             }
         }
         return new Bitmap(new DIBHeader(imageHeight,imageWidth,  bitsPerPixel,Compression.BI_RGB),pixelArray);
