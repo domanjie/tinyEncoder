@@ -2,7 +2,7 @@
 [![Forks][forks-shield]][forks-url]
 [![Stargazers][stars-shield]][stars-url]
 [![Issues][issues-shield]][issues-url]
-[![Unlicense License][license-shield]][license-url]
+[![MIT License][license-shield]][license-url]
 
 <!-- PROJECT LOGO -->
 <br />
@@ -112,3 +112,4 @@ Project Link: [https://github.com/domanjie/tinyEncoder](https://github.com/your_
 [issues-url]: https://github.com/domanjie/tinyEncoder/issues
 [license-shield]: https://img.shields.io/github/license/domanjie/tinyEncoder.svg?style=for-the-badge
 [license-url]: https://github.com/domanjie/tinyEncoder/blob/main/LICENSE.txt
+
