@@ -111,4 +111,4 @@ Project Link: [https://github.com/domanjie/tinyEncoder](https://github.com/your_
 [issues-shield]: https://img.shields.io/github/issues/domanjie/tinyEncoder.svg?style=for-the-badge
 [issues-url]: https://github.com/domanjie/tinyEncoder/issues
 [license-shield]: https://img.shields.io/github/license/domanjie/tinyEncoder.svg?style=for-the-badge
-[license-url]: https://github.com/domanjie/tinyEncoder/blob/master/LICENSE.txt
+[license-url]: https://github.com/domanjie/tinyEncoder/blob/main/LICENSE.txt
