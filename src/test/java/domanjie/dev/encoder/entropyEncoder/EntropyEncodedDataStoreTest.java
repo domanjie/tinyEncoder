@@ -12,7 +12,7 @@ class EntropyEncodedDataStoreTest {
         arrayPacker.addBits(0b111, 5);
         var imageData= arrayPacker.getData();
         assertEquals(1, imageData.size());
-        assertEquals((byte) 0b0011_1111, imageData.getFirst());
+        assertEquals((byte) 0b0011_1111, imageData.get(0));
     }
     @Test
     public void addingValOfSpecifiedBitSizeShouldResultInACorrectlyPaddedArrayCase2(){

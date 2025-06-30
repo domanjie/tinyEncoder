@@ -15,12 +15,12 @@ public class EntropyEncodedDataStore {
            if(nextBitIndex%8==0){
                byteList.add((byte)0x00);
            }
-           var lastByte= byteList.removeLast();
+           var lastByte= byteList.remove(byteList.size()-1);
            lastByte = (byte) (lastByte | (bit  << (7- nextBitIndex%8)));
-           byteList.addLast(lastByte);
+           byteList.add(lastByte);
            nextBitIndex++;
            if(nextBitIndex%8==0){
-               if (byteList.getLast() == (byte) (0xff)){
+               if (byteList.get(byteList.size()-1) == (byte) (0xff)){
                    byteList.add((byte) 0x00);
                    nextBitIndex+=8;
                }
