@@ -1,23 +1,15 @@
 package domanjie.dev.encoder;
 
 public class Quantizer {
-    public  static   int [][] quantize(int [][] quantTable,  int  [][] inputArr ) {
+    public  static   _8x8Block quantize(_8x8Block quantTable,  _8x8Block  inputArr ) {
 
-        if (isNon8x8(quantTable) && isNon8x8(inputArr))
-            throw new IllegalArgumentException("quant table and input block must be an 8x8 array");
-        else if (isNon8x8(quantTable))
-            throw new IllegalArgumentException("quant table must be an 8x8 array");
-        else if (isNon8x8(inputArr))
-            throw new IllegalArgumentException("input block must be an 8x8 array");
+        var result =new int[8][8];
         for (int x = 0; x < 8; x++) {
             for (int y = 0; y < 8; y++) {
-                inputArr[x][y] = Math.round((float) inputArr[x][y] / quantTable[x][y]);
+                result[x][y] = Math.round((float) inputArr.val()[x][y] / quantTable.val() [x][y]);
             }
         }
-        return inputArr ;
+        return new _8x8Block(result) ;
 
-    }
-    private static boolean isNon8x8( int  [][] inputArr ){
-        return (inputArr.length != 8 || inputArr[0].length != 8);
     }
 }

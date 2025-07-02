@@ -26,12 +26,6 @@ public class Encoder {
         var maxHorizontalSamplingFactor=Arrays.stream(components).map(imageComponent-> imageComponent.samplingFactor().horizontalSamplingFactor()).max(Comparator.comparingInt(Integer::intValue)).get();
         var maxNoRowsMcu= DataUnitL * maxVerticalSamplingFactor;
         var maxNoColsMcu= DataUnitL * maxHorizontalSamplingFactor ;
-//
-//        var maxNoLines=components[0].data().length  % maxNoRowsMcu ==0?components[0].data().length : components[0].data().length +maxNoRowsMcu - (components[0].data().length %maxNoRowsMcu);
-//        var maxSamplesPerLines=components[0].data()[0].length % maxNoColsMcu ==0
-//                ? components[0].data()[0].length
-//                : components[0].data()[0].length +maxNoColsMcu - (components[0].data()[0].length%maxNoColsMcu);
-
         var maxNoLines= components[0].data().length;
         var maxSamplesPerLines=components[0].data()[0].length;
         var componentAcEntropyEncoderMap=
@@ -107,9 +101,9 @@ public class Encoder {
                                                      EntropyEncodedDataStore imageData) {
         for (int m=0;m<component.length;m+=8){
             for(int n =0;n<component[0] .length;n+=8) {
-                var _8x8Block = TwoDIntArrayUtils.getSubMatrix(m, m + 8, n, n + 8, component);
-                var quantizedDctCoefficients= transformAndQuantize8x8Block(componentQuantTable,_8x8Block);
-                var zigZagSequence= generateZigZagSequenceFrom8x8Block(quantizedDctCoefficients);
+                var subMatrix = TwoDIntArrayUtils.getSubMatrix(m, m + 8, n, n + 8, component);
+                var quantizedDctBlock= transformAndQuantize8x8Block(componentQuantTable,new _8x8Block(subMatrix));
+                var zigZagSequence= generateZigZagSequenceFrom8x8Block(quantizedDctBlock.val());
                 var dcEncodedVar =  dcHuffmanEntropyEncoder.encode(zigZagSequence[0]);
                 imageData.addBits(dcEncodedVar.val(), dcEncodedVar.encodedValSize());
                 int runOfZeros = 0;
@@ -135,8 +129,8 @@ public class Encoder {
         }
     }
 
-    private int [][] transformAndQuantize8x8Block(QuantTable quantizationTable,int [][]block){
-        var transformedDctCoefficients=TwoWayDctTransformer.twoDimensionalForwardDct(block);
+    private _8x8Block transformAndQuantize8x8Block(QuantTable quantizationTable,_8x8Block block){
+        var transformedDctCoefficients= TwoDDctTransformer.twoDimensionalForwardDct( block);
         return Quantizer.quantize(quantizationTable.table(),transformedDctCoefficients);
     }
 

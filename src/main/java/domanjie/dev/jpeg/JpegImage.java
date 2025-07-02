@@ -39,14 +39,14 @@ public class JpegImage {
                 dataOutputStream.write(elementPrecision$TableDestinationIdentifier);
                 switch (quantTable.precision()) {
                     case _8BIT -> {
-                        for(var  row: quantTable.table()){
+                        for(var  row: quantTable.table().val()){
                             for(var val : row ){
                                 dataOutputStream.writeByte(val);
                             }
                         }
                     }
                     case _16BIT -> {
-                        for(var  row: quantTable.table()){
+                        for(var  row: quantTable.table().val()){
                             for(var val : row ){
                                 dataOutputStream.writeShort(val);
                             }
