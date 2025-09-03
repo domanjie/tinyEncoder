@@ -4,10 +4,10 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
-public class HuffmanCodeAndCodeSizeTablesGenerator {
+public class HuffmanCodeAndCodeSizeTables {
     private  final Map<Integer, Integer> EHUFCO=new HashMap<>();
     private final Map<Integer ,Integer> EHUFSI=new HashMap<>();
-    public HuffmanCodeAndCodeSizeTablesGenerator(int[] bitList, int[] huffVal){
+    public HuffmanCodeAndCodeSizeTables(int[] bitList, int[] huffVal){
         var code=0;
         var huffValIndex=0;
         for (int i = 0; i<bitList.length; i++){

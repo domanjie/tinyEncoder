@@ -3,9 +3,9 @@ package domanjie.dev.encoder.entropyEncoder;
 import domanjie.dev.utils.OutOfBoundsException;
 
 public class AcHuffmanEntropyEncoder  {
-    private  final HuffmanCodeAndCodeSizeTablesGenerator generator;
+    private  final HuffmanCodeAndCodeSizeTables tables;
     public AcHuffmanEntropyEncoder(int[] bitList, int[] huffVal) {
-        generator=new HuffmanCodeAndCodeSizeTablesGenerator(bitList, huffVal);
+        tables=new HuffmanCodeAndCodeSizeTables(bitList, huffVal);
 
     }
     public EncodedVar encode(int runOfZeros, int val) {
@@ -20,14 +20,14 @@ public class AcHuffmanEntropyEncoder  {
             } else {
                 throw new IllegalArgumentException("Encoding run of " + runOfZeros+1 + "not allowed");
             }
-            var huffCode=generator.getHuffmanCodeForSymbol(symbol);
-            var huffSize=generator.getHuffmanCodeSizeForSymbol(symbol);
+            var huffCode=tables.getHuffmanCodeForSymbol(symbol);
+            var huffSize=tables .getHuffmanCodeSizeForSymbol(symbol);
             return new EncodedVar(huffCode, huffSize);
         }
         var category = cSize(val);
         var rc= runOfZeros<<4|category;
-        var huffCode = generator.getHuffmanCodeForSymbol(rc);
-        var huffSize = generator.getHuffmanCodeSizeForSymbol(rc);
+        var huffCode = tables.getHuffmanCodeForSymbol(rc);
+        var huffSize = tables.getHuffmanCodeSizeForSymbol(rc);
         //this gets the additional bits to be concatenated
         //with the huffman-coded val
         var additionalBits=0;

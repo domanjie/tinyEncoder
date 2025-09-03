@@ -23,8 +23,6 @@ public class JpegMarker {
     public static final int RST6=0XFFD6;
     public static final int RST7=0XFFD7;
 
-
-
-
+    public static final int[] restartIntervals=new int[]{RST0,RST1,RST2,RST3,RST4,RST5,RST6,RST7};
 
 }

@@ -4,17 +4,17 @@ import domanjie.dev.utils.OutOfBoundsException;
 
 public class DcHuffmanEntropyEncoder {
     private  int pred=0;
-    private final HuffmanCodeAndCodeSizeTablesGenerator generator;
+    private final HuffmanCodeAndCodeSizeTables tables ;
     public DcHuffmanEntropyEncoder(int[] bitList, int[] huffVal) {
-        generator=new HuffmanCodeAndCodeSizeTablesGenerator(bitList, huffVal);
+        tables =new HuffmanCodeAndCodeSizeTables(bitList, huffVal);
     }
 
     public EncodedVar encode(int val) {
         var diff= val-pred;
         pred=val;
         var category =csize(diff);
-        var huffCode=generator.getHuffmanCodeForSymbol(category);
-        var huffSize=generator.getHuffmanCodeSizeForSymbol(category);
+        var huffCode=tables.getHuffmanCodeForSymbol(category);
+        var huffSize=tables.getHuffmanCodeSizeForSymbol(category);
 
         //this gets the additional bits to be concatenated
         //with the huffman-coded category and is for uniquely

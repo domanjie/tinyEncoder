@@ -6,28 +6,103 @@ import domanjie.dev.jpeg.*;
 import domanjie.dev.encoder.entropyEncoder.EntropyEncodedDataStore;
 import domanjie.dev.utils.TwoDIntArrayUtils;
 
-import java.util.Arrays;
-import java.util.Comparator;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public class Encoder {
     //data unit represents 8x8 block in dct-based processes
     private static final int DataUnitL=8;
-;
-
+    private final int noOfThread;
     public Encoder() {
+        noOfThread=1;
     }
-    public Encoder(QuantTable lumaQuanTable, QuantTable chromaQuantTable){
+    public Encoder(int noOfThread){
+        if (noOfThread<1){
+            throw new IllegalArgumentException("Minimum of 1 thread is Needed for encoding.");
+        }
+        this.noOfThread=noOfThread;
     }
     public  JpegImage encode(ImageComponent[] components){
-        var imageData=new EntropyEncodedDataStore();
-        var maxVerticalSamplingFactor= Arrays.stream(components).map(imageComponent-> imageComponent.samplingFactor().verticalSamplingFactor()).max(Comparator.comparingInt(Integer::intValue)).get();
-        var maxHorizontalSamplingFactor=Arrays.stream(components).map(imageComponent-> imageComponent.samplingFactor().horizontalSamplingFactor()).max(Comparator.comparingInt(Integer::intValue)).get();
-        var maxNoRowsMcu= DataUnitL * maxVerticalSamplingFactor;
-        var maxNoColsMcu= DataUnitL * maxHorizontalSamplingFactor ;
+        int maxVerticalSamplingFactor= Arrays
+                .stream(components)
+                .map(imageComponent-> imageComponent.samplingFactor().verticalSamplingFactor())
+                .max(Comparator.comparingInt(Integer::intValue)).get();
+        int maxHorizontalSamplingFactor=Arrays
+                .stream(components)
+                .map(imageComponent-> imageComponent.samplingFactor().horizontalSamplingFactor())
+                .max(Comparator.comparingInt(Integer::intValue)).get();
+        int noRowsMcu= DataUnitL * maxVerticalSamplingFactor;
+        int noColsMcu= DataUnitL * maxHorizontalSamplingFactor ;
         var maxNoLines= components[0].data().length;
         var maxSamplesPerLines=components[0].data()[0].length;
+        int componentRowToMCURowRatio= (int) Math.ceil((double) components[0].data().length /noRowsMcu);
+        int componentColToMCUColRatio= (int) Math.ceil((double) components[0].data()[0].length /noColsMcu);
+        var totalMCUs=componentColToMCUColRatio*componentRowToMCURowRatio;
+        int MCUsPerThread=Math.min(totalMCUs/noOfThread,65_535);
+        var MCUsLeft= totalMCUs-(MCUsPerThread * noOfThread );
+        var ecsAggregator= new  Vector<List<Byte>>();
+        /*
+        Initialize the size of the entropy encoded segment aggregator.
+        This prevents ArrayIndexOutOfBounds exception as the order
+        in which threads store their partition is non-deterministic.
+        */
+        while (ecsAggregator.size()< noOfThread)ecsAggregator.add(null);
+        var workerThreads=new Thread[noOfThread-1];
+        var mainTStartMCU=totalMCUs-(MCUsPerThread+MCUsLeft);
+        var currentMCU=0;
+        var partition= 0;
+        /*
+          chunk MCUs and process them in separate threads.
+          The last chunk is left to be processed by the main thread.
+          Notice that This loop never runs if the @Param  is 1
+        */
+        while(currentMCU!=mainTStartMCU){
+            var workerTStartMCU=currentMCU;
+            int workerTEndMCU=workerTStartMCU+MCUsPerThread;
+            int effectivelyFinalPartition = partition;
+            workerThreads[partition]= new Thread(()->{
+                var imageData =  processSection(
+                        components,
+                        workerTStartMCU,
+                        workerTEndMCU,
+                        componentRowToMCURowRatio,
+                        componentColToMCUColRatio,
+                        noRowsMcu,noColsMcu,
+                        maxVerticalSamplingFactor,
+                        maxHorizontalSamplingFactor
+                );
+                ecsAggregator.set(effectivelyFinalPartition,imageData);
+            });
+            partition++;
+            currentMCU=workerTEndMCU;
+        }
+        for(var thread: workerThreads ){
+            thread.start();
+        }
+        //Main thread processes the last chunk of MCUs
+        var imageData= processSection(
+                components,
+                mainTStartMCU,
+                totalMCUs,
+                componentRowToMCURowRatio,
+                componentColToMCUColRatio,
+                noRowsMcu,noColsMcu,
+                maxVerticalSamplingFactor,
+                maxHorizontalSamplingFactor
+        );
+        ecsAggregator.set(partition,imageData);
+        for (Thread thread : workerThreads) {
+            try {
+                thread.join();
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+        }
+        var scan= new Scan(components, 0, 63, 0,0,noOfThread>1? MCUsPerThread:0,ecsAggregator);
+        return new JpegImage(components, List.of(scan),maxNoLines, maxSamplesPerLines );
+    }
+    private List<Byte> processSection(ImageComponent[] components, int startIndex, int endIndex, int componentRowToMCURowRatio, int  componentColToMCUColRatio, int noRowsMcu, int noColsMcu, int maxVerticalSamplingFactor, int maxHorizontalSamplingFactor){
+        var imageData=new EntropyEncodedDataStore();
         var componentAcEntropyEncoderMap=
                 Arrays.stream(components).collect(Collectors.toMap(
                         imageComponent -> imageComponent,
@@ -36,23 +111,22 @@ public class Encoder {
                 Arrays.stream(components).collect(Collectors.toMap(
                         imageComponent -> imageComponent,
                         imageComponent -> new DcHuffmanEntropyEncoder(imageComponent.dcEntropyEncodingTable().bitList(),imageComponent.dcEntropyEncodingTable().huffVal())));
-        ;
-
-        for (int i = 0; i < components[0].data().length ; i+=maxNoRowsMcu) {
-            for (int j = 0; j < components[0].data()[0].length; j+=maxNoColsMcu) {
-                for (var component:components ) {
-                    var x= fetchMcu(i , j,component.data(),maxNoRowsMcu,maxNoColsMcu);
-                    var sampledComponent= SubSampler.subSampleComponent(x,  component.samplingFactor(),maxHorizontalSamplingFactor, maxVerticalSamplingFactor);
-                    var leveShiftedComponent= levelShiftComponent(sampledComponent, 8);
-                    transformQuantizeAndEncodeComponent(leveShiftedComponent,component.quantTable(),
-                            componentAcEntropyEncoderMap.get(component),
-                            componentDcEntropyEncoderMap.get(component),
-                            imageData);
-                };
+        for (int i =startIndex; i<endIndex ; i++){
+            for (var component: components ) {
+                //map i back to 2d
+                int  row= i/componentColToMCUColRatio * noRowsMcu;
+                int  col= i%componentColToMCUColRatio * noColsMcu;
+                var mcu= TwoDIntArrayUtils.getSubMatrix(row, Math.min(row+noRowsMcu,component.data().length),col,Math.min(col+noColsMcu ,component.data()[0].length),component.data());
+                mcu =padMcuIfNeeded(mcu, noRowsMcu,noColsMcu);
+                var sampledComponent= SubSampler.subSampleComponent(mcu,  component.samplingFactor(),maxHorizontalSamplingFactor, maxVerticalSamplingFactor);
+                var leveShiftedComponent= levelShiftComponent(sampledComponent, 8);
+                transformQuantizeAndEncodeComponent(leveShiftedComponent,component.quantTable(),
+                        componentAcEntropyEncoderMap.get(component),
+                        componentDcEntropyEncoderMap.get(component),
+                        imageData);
             }
         }
-        var scan= new Scan(components, 0, 63, 0,0,imageData.getData());
-        return new JpegImage(components, Set.of(scan),maxNoLines, maxSamplesPerLines );
+        return imageData.getData();
     }
 
     private int[][] levelShiftComponent(int[][] sampledComponent, int precision) {
@@ -64,37 +138,19 @@ public class Encoder {
         }
         return  sampledComponent;
     }
+    private int[][] padMcuIfNeeded(int[][] mcu , int noRowsMcu, int noColsMcu ){
+        int[][] result;
+        if(mcu.length<noRowsMcu){
+            var padBy=noRowsMcu-mcu.length;
+            mcu= TwoDIntArrayUtils.padRow(mcu,padBy);
+        }
+        if(mcu[0].length<noColsMcu){
+            var padBy=noColsMcu-mcu[0].length;
+            mcu= TwoDIntArrayUtils.padColumn(mcu, padBy);
+        }
+        return mcu;
+    }
 
-    private int[][] fetchMcu(int rowIndex, int colIndex, int[][] componentData, int maxNoRowsMcu, int maxNoColsMcu){
-        int[][] subPixelArray;
-        if(rowPadNeeded(rowIndex,maxNoRowsMcu,componentData) && columnPadNeeded(colIndex, maxNoColsMcu, componentData)){
-            subPixelArray=TwoDIntArrayUtils.getSubMatrix(rowIndex, componentData.length,colIndex,componentData[0].length,componentData);
-            var padRowBy =rowIndex+maxNoRowsMcu-componentData.length;
-            subPixelArray=TwoDIntArrayUtils.padRow(subPixelArray,padRowBy);
-            var padColumnBy= colIndex+maxNoColsMcu-componentData[0].length;
-            subPixelArray= TwoDIntArrayUtils.padColumn(subPixelArray, padColumnBy);
-        }else if(rowPadNeeded(rowIndex,maxNoRowsMcu,componentData)){
-            subPixelArray= TwoDIntArrayUtils.getSubMatrix(rowIndex, componentData.length, colIndex,colIndex+maxNoColsMcu ,componentData);
-            var padBy=rowIndex+maxNoRowsMcu-componentData.length;
-            subPixelArray= TwoDIntArrayUtils.padRow(subPixelArray,padBy);
-        }
-        else if(columnPadNeeded(colIndex, maxNoColsMcu, componentData)){
-            subPixelArray=TwoDIntArrayUtils.getSubMatrix(rowIndex, rowIndex+maxNoRowsMcu,colIndex,componentData[0].length,componentData);
-            var padBy=maxNoColsMcu+colIndex-componentData[0].length;
-            subPixelArray= TwoDIntArrayUtils.padColumn(subPixelArray, padBy);
-        }
-        else{
-            subPixelArray=TwoDIntArrayUtils.getSubMatrix(rowIndex, rowIndex+maxNoRowsMcu,colIndex,colIndex+maxNoColsMcu,componentData
-            );
-        }
-        return  subPixelArray;
-    }
-    private boolean rowPadNeeded(int currentRowIndex,int maxNoRowsMcu , int[][] pixelArray){
-        return currentRowIndex+maxNoRowsMcu>=pixelArray.length;
-    }
-    public boolean columnPadNeeded(int currentColumnIndex,int maxNoColsMcu , int[][] pixelArray){
-        return currentColumnIndex+maxNoColsMcu>=pixelArray[0].length;
-    }
     public void transformQuantizeAndEncodeComponent(int[][] component, QuantTable componentQuantTable,
                                                      AcHuffmanEntropyEncoder acHuffmanEntropyEncoder,
                                                      DcHuffmanEntropyEncoder dcHuffmanEntropyEncoder,

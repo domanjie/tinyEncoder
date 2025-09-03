@@ -4,6 +4,7 @@ import org.apache.commons.lang3.ArrayUtils;
 
 import java.io.*;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -14,11 +15,11 @@ public class JpegImage {
     //this defines the max number of columns  all components in the frame
     private final int  maxNoSamplesPerLine;
     private final ImageComponent[] imageComponents;
-    private final Set<Scan> scans;
+    private final List<Scan> scans;
     private final int  frameSamplePrecision=8;
 
 
-    public JpegImage(ImageComponent[] imageComponents,Set<Scan> scans,
+    public JpegImage(ImageComponent[] imageComponents,List<Scan> scans,
                      int maxNoLines, int maxNoSamplesPerLine) {
         this.imageComponents = imageComponents;
         this.scans = scans;
@@ -74,8 +75,8 @@ public class JpegImage {
             }
 
             var huffmanTables= Arrays.stream(imageComponents).flatMap(imageComponent
-                    -> Stream.of(imageComponent.acEntropyEncodingTable(), imageComponent.dcEntropyEncodingTable())).collect(Collectors.toSet());
-
+                    -> Stream.of(imageComponent.acEntropyEncodingTable(), imageComponent.dcEntropyEncodingTable()))
+                    .collect(Collectors.toSet());
             for (var huffTable: huffmanTables){
                 var huffTableLength=19+huffTable.huffVal().length;
                 var packedTableClassAndHuffmanTableDestinationIdentifier=huffTable.tableClass().val()<< 4| huffTable.tableDestinationIdentifier().val();
@@ -86,6 +87,11 @@ public class JpegImage {
                 writeBytes(dataOutputStream,huffTable.huffVal());
             }
             for(var scan : scans){
+                dataOutputStream.writeShort(JpegMarker.DRI);
+                var restartIntervalDefLength=4;
+                var ri= scan.restartInterval();
+                dataOutputStream.writeShort(restartIntervalDefLength);
+                dataOutputStream.writeShort(ri);
                 var noComponentsInScan=scan.components().length;
                 var scanHeaderLength= 6 + 2 * noComponentsInScan;
                 dataOutputStream.writeShort(JpegMarker.SOS);
@@ -101,8 +107,16 @@ public class JpegImage {
                 var successiveApproximationHighAndLow=
                         scan.successiveApproximationBitPositionHigh()<<4|scan.successiveApproximationBitPositionLow();
                 dataOutputStream.writeByte(successiveApproximationHighAndLow);
-                var imageDataArray=scan.EntropyEncodedSegment().toArray(new Byte[0]);
-                dataOutputStream.write(ArrayUtils.toPrimitive(imageDataArray));
+                var ecsIterator=scan.entropyEncodedSegments().iterator();
+                var ecs0 =ecsIterator.next();
+                dataOutputStream.write(ArrayUtils.toPrimitive(ecs0.toArray(new Byte[0])));
+                var restartIndex=0;
+                while (ecsIterator.hasNext()){
+                    dataOutputStream.writeShort(JpegMarker.restartIntervals[restartIndex%8]);
+                    var ecs =ecsIterator.next();
+                    dataOutputStream.write(ArrayUtils.toPrimitive(ecs.toArray(new Byte[0])));
+                    restartIndex++;
+                }
             }
             dataOutputStream.writeShort(JpegMarker.EOI);
             byteArrayOutputStream.writeTo(new FileOutputStream(fileName));

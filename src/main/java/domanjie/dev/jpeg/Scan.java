@@ -1,6 +1,7 @@
 package domanjie.dev.jpeg;
 
 import java.util.List;
+import java.util.Vector;
 
 public record Scan(
         ImageComponent[] components,
@@ -8,6 +9,7 @@ public record Scan(
         int endOfSpectralSelect,
         int successiveApproximationBitPositionHigh,
         int successiveApproximationBitPositionLow,
-        List<Byte> EntropyEncodedSegment
+        int restartInterval,
+        Vector<List<Byte>> entropyEncodedSegments
 ) {
 }

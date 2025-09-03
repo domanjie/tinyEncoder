@@ -11,7 +11,7 @@ public class Defaults {
     static final QuantTable DEFAULT_LUMA_QUANT_TABLE= new QuantTable(
             TableDestinationIdentifier.LUMA_TABLE_IDENTIFIER,
             QuantTablePrecision._8BIT,
-//            new int[][]{
+//            new _8x8Block(new int[][]{
 //                    {1, 1, 1, 1, 1, 1 ,1 , 1},
 //                    {1, 1, 1, 1, 1, 1 ,1 , 1},
 //                    {1, 1, 1, 1, 1, 1 ,1 , 1},
@@ -20,7 +20,7 @@ public class Defaults {
 //                    {1, 1, 1, 1, 1, 1 ,1 , 1},
 //                    {1, 1, 1, 1, 1, 1 ,1 , 1},
 //                    {1, 1, 1, 1, 1, 1 ,1 , 1}
-//            }
+//            })
             new _8x8Block(new int [][]{
                     {16, 11, 10, 16,  124,  140,  151,  161},
                     {12, 12, 14, 19,  126,  158,  160,  155},
@@ -35,7 +35,7 @@ public class Defaults {
     static final QuantTable DEFAULT_CHROMA_QUANT_TABLE =new QuantTable(
             TableDestinationIdentifier.CHROMA_TABLE_IDENTIFIER,
             QuantTablePrecision._8BIT,
-//            new int[][]{
+//            new _8x8Block(new int[][]{
 //                    {1, 1, 1, 1, 1, 1 ,1 , 1},
 //                    {1, 1, 1, 1, 1, 1 ,1 , 1},
 //                    {1, 1, 1, 1, 1, 1 ,1 , 1},
@@ -44,7 +44,8 @@ public class Defaults {
 //                    {1, 1, 1, 1, 1, 1 ,1 , 1},
 //                    {1, 1, 1, 1, 1, 1 ,1 , 1},
 //                    {1, 1, 1, 1, 1, 1 ,1 , 1}
-//            }
+//            })
+
             new _8x8Block(new int  [][]{
                     {17, 18, 24, 47, 99, 99, 99, 99},
                     {18, 21, 26, 66, 99, 99, 99, 99},

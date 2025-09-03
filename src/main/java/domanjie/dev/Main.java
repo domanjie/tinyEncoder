@@ -23,10 +23,6 @@ public class Main {
                 List.of(Defaults.lumaSamplingFactor,Defaults.cbSamplingFactor, Defaults.crSamplingFactor));
         try {
             var cli=  cliParser.parse(options, args);
-            var arguments = cli.getArgList();
-            boolean generateEntropyTables=false;
-            int threads;
-            String modeOfOperation;
             if(cli.hasOption("help")){
                 String header = "tinyEncoder - compress an image file to a JPEG file";
                 String footer = "Please report issues at https://github.com/domanjie/tinyEncoder/issues";
@@ -34,16 +30,10 @@ public class Main {
                 formatter.printHelp("tinyEncoder [OPTION]... [FILE]", header,options,footer,false);
                 System.exit(0);
             }
-            if (arguments.size()!=1){
+            if ( cli.getArgList().size()!=1){
                 throw new ParseException("Illegal No of arguments");
             };
-            if(cli.hasOption("t")){
-               threads=cli.getParsedOptionValue("t");
-           }
-           if(cli.hasOption("m")){
-               modeOfOperation=cli.getOptionValue("m");
-           };
-           if(cli.hasOption("s")){
+            if(cli.hasOption("s")){
                var samplingFactorsStr= cli.getOptionValue("s");
                if(samplingFactorsStr.matches("[1-4x1-4](,[1-4]x[1-4]){0,2}")){
                    throw new ParseException("Invalid sampling factors");
@@ -57,35 +47,33 @@ public class Main {
                            samplingFactors.set(i,new SamplingFactor(Integer.parseInt(factor[0]),Integer.parseInt(factor[0])));
                        });
            }
-           File file =new File(arguments.get(0));
+           boolean generateEntropyTables=cli.getParsedOptionValue("e",false);
+           String  modeOfOperation=cli.getOptionValue("m","sequential");
+           int noOfThread= cli.getParsedOptionValue("t",1);
+           File file =new File(cli.getArgList().get(0));
            byte[] byteArr;
            byteArr= Files.readAllBytes(file.toPath());
-           var encoder =new Encoder();
+           var encoder =new Encoder(noOfThread);
            var componentData= RGBToYCbCrConverter.convert(BitMapFileProcessor.bytesToBmp(byteArr).getPixelArray());
            var imageComponents = getImageComponents(componentData,samplingFactors);
            var jpegImage = encoder.encode(imageComponents);
-           String outputFileName =cli.hasOption("o")?
-                   cli.getOptionValue("o"):
-                   getBaseName(file.getName())+".jpg";
+           String outputFileName=cli.getParsedOptionValue("o",getBaseName(file.getName())+".jpg");
            jpegImage.toFile(outputFileName);
-        } catch (ParseException e) {
-            throw new RuntimeException(e);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
+        } catch (ParseException | IOException e) {
+            System.out.println(e.getMessage());
         }
-
     }
 
     private static Options getOptions() {
         Options options= new Options();
         options.addOption("m","mode",true, "specify the mode of operation.Currently supports only sequential dct." );
         options.addOption("o", "output", true ,"name of output file.");
-        options.addOption("t", "threads" ,true,"Specify no of threads, for parallel encoding." );
+        options.addOption(Option.builder().type(Integer.class).option("t").longOpt("threads").hasArg(true).desc("Specify no of threads, for parallel encoding.").get());
         options.addOption("s","sample",true, "specify the sampling factor for the sub-sampling phase.");
-        options.addOption("e", "generate-entropy-tables",false, """
+        options.addOption(Option.builder().option("e").longOpt("generate-entropy-tables").hasArg(false).desc("""
                                                                                              Generate optimal huff-tables ignoring the defaults.
                                                                                              This may make the encoding process slower.
-                                                                                             """ );
+                                                                                             """).type(Boolean.class).get());
         options.addOption(Option.builder().longOpt("help").desc("display this help and exit.").hasArg(false).get());
         return options;
     }

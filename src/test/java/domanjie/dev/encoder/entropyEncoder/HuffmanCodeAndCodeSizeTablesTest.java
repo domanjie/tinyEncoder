@@ -1,6 +1,5 @@
 package domanjie.dev.encoder.entropyEncoder;
 
-import domanjie.dev.encoder.entropyEncoder.HuffmanCodeAndCodeSizeTablesGenerator;
 import org.junit.jupiter.api.Test;
 
 import java.util.Map;
@@ -8,12 +7,12 @@ import static java.util.Map.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-class HuffmanCodeAndCodeSizeTablesGeneratorTest {
+class HuffmanCodeAndCodeSizeTablesTest {
     @Test
     public void shouldReturnExpectedHuffCodeAndHuffCodeSizeTables(){
         var bitList=new int[]{  0, 1, 3, 5,0, 0, 0, 0,0, 0, 0, 0,0, 0, 0, 0};
         var HuffVal=new int[]{0x08, 0x00, 0x07,0xb8, 0x09, 0x38,0x39, 0x76,0x78};
-        var generator=new HuffmanCodeAndCodeSizeTablesGenerator(bitList,HuffVal);
+        var generator=new HuffmanCodeAndCodeSizeTables(bitList,HuffVal);
         Map<Integer, Integer> expectedHuffmanCodeTable= Map.ofEntries(
                 entry(0x08,0b00),
                 entry(0x00,0b010),
@@ -43,7 +42,7 @@ class HuffmanCodeAndCodeSizeTablesGeneratorTest {
     public void shouldReturnExpectedHuffCodeAndHuffCodeSizeTablesCase2(){
         var bitList=new int[]{ 1, 0, 2, 3,0, 0, 0, 0,0, 0, 0, 0,0, 0, 0, 0};
         var huffVal=new int[]{ 0x00, 0x06, 0x08,0x38, 0x88, 0xb6};
-        var generator=new HuffmanCodeAndCodeSizeTablesGenerator(bitList,huffVal);
+        var generator=new HuffmanCodeAndCodeSizeTables(bitList,huffVal);
         Map<Integer, Integer> expectedHuffmanCodeTable= Map.ofEntries(
                 entry(0x00, 0b0),
                 entry(0x06, 0b100),
@@ -67,14 +66,14 @@ class HuffmanCodeAndCodeSizeTablesGeneratorTest {
     public void shouldReturnExpectedHuffCodeForTheInputSymbol(){
         var bitList=new int[]{ 1, 0, 2, 3,0, 0, 0, 0,0, 0, 0, 0,0, 0, 0, 0};
         var huffVal=new int[]{ 0x00, 0x06, 0x08,0x38, 0x88, 0xb6};
-        var generator=new HuffmanCodeAndCodeSizeTablesGenerator(bitList,huffVal);
+        var generator=new HuffmanCodeAndCodeSizeTables(bitList,huffVal);
         assertEquals(0b1101, generator.getHuffmanCodeForSymbol(0x88));
     }
     @Test
     public void shouldReturnExpectedHuffSizeForTheInputSymbol(){
         var bitList=new int[]{ 1, 0, 2, 3,0, 0, 0, 0,0, 0, 0, 0,0, 0, 0, 0};
         var huffVal=new int[]{ 0x00, 0x06, 0x08,0x38, 0x88, 0xb6};
-        var generator=new HuffmanCodeAndCodeSizeTablesGenerator(bitList,huffVal);
+        var generator=new HuffmanCodeAndCodeSizeTables(bitList,huffVal);
         assertEquals(4, generator.getHuffmanCodeSizeForSymbol(0x88));
     }
 
@@ -124,7 +123,7 @@ class HuffmanCodeAndCodeSizeTablesGeneratorTest {
                 entry(11,9)
 
         );
-       var generator= new HuffmanCodeAndCodeSizeTablesGenerator(bitList, huffVal);
+       var generator= new HuffmanCodeAndCodeSizeTables(bitList, huffVal);
        assertEquals(expectedHuffmanCodeTable,generator.getHuffmanCodeTable());
        assertEquals(expectedHuffmanCodeSizeTable,generator.getHuffmanCodeSizeTable());
     }
